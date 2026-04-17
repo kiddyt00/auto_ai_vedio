@@ -26,6 +26,7 @@ const workflowService = {
     const { article, imageModel = 'stable-diffusion', scriptModel = 'gpt-4', audioModel = 'elevenlabs', videoModel = 'sora', characterData } = options;
     
     console.log('Executing workflow...');
+    console.log('Character data:', characterData);
     
     const steps = [];
     let currentStep = 1;
@@ -34,16 +35,21 @@ const workflowService = {
     // 步骤0：创建人物特征（如果提供）
     if (characterData) {
       console.log(`Step ${currentStep}: Creating character`);
-      const character = characterService.createCharacter(characterData);
-      characterId = character.id;
-      steps.push({
-        stepId: uuidv4(),
-        stepNumber: currentStep++,
-        name: 'create_character',
-        status: 'completed',
-        result: character,
-        createdAt: new Date().toISOString()
-      });
+      try {
+        const character = characterService.createCharacter(characterData);
+        characterId = character.id;
+        console.log('Created character:', character);
+        steps.push({
+          stepId: uuidv4(),
+          stepNumber: currentStep++,
+          name: 'create_character',
+          status: 'completed',
+          result: character,
+          createdAt: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error creating character:', error);
+      }
     }
     
     // 步骤1：文章生图
@@ -51,6 +57,7 @@ const workflowService = {
     const imageOptions = { model: imageModel };
     if (characterId) {
       imageOptions.characterPrompt = characterService.generateCharacterPrompt(characterId);
+      console.log('Character prompt for images:', imageOptions.characterPrompt);
     }
     const imageResult = await articleService.generateImagesFromArticle(article, imageOptions);
     steps.push({
@@ -67,6 +74,7 @@ const workflowService = {
     const scriptOptions = { model: scriptModel };
     if (characterId) {
       scriptOptions.characterPrompt = characterService.generateCharacterPrompt(characterId);
+      console.log('Character prompt for script:', scriptOptions.characterPrompt);
     }
     const scriptResult = await articleService.generateScriptFromArticle(article, scriptOptions);
     steps.push({
@@ -83,6 +91,7 @@ const workflowService = {
     const storyboardOptions = { model: scriptModel };
     if (characterId) {
       storyboardOptions.characterPrompt = characterService.generateCharacterPrompt(characterId);
+      console.log('Character prompt for storyboard:', storyboardOptions.characterPrompt);
     }
     const storyboardResult = await articleService.generateStoryboardFromArticle(article, storyboardOptions);
     steps.push({
@@ -110,7 +119,9 @@ const workflowService = {
     console.log(`Step ${currentStep}: Generating video`);
     let videoPrompt = `Create a video based on the script: ${scriptResult.script.substring(0, 500)}...`;
     if (characterId) {
-      videoPrompt += `\n\n${characterService.getConsistencyPrompt(characterId)}`;
+      const consistencyPrompt = characterService.getConsistencyPrompt(characterId);
+      videoPrompt += `\n\n${consistencyPrompt}`;
+      console.log('Consistency prompt for video:', consistencyPrompt);
     }
     const videoResult = await videoService.generateVideo({
       prompt: videoPrompt,
@@ -126,6 +137,9 @@ const workflowService = {
       result: videoResult,
       createdAt: new Date().toISOString()
     });
+    
+    console.log('Workflow completed with characterId:', characterId);
+    console.log('Total steps:', steps.length);
     
     return {
       workflowId,
