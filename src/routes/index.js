@@ -5,6 +5,9 @@ const router = express.Router();
 const videoController = require('../controllers/videoController');
 const modelController = require('../controllers/modelController');
 const templateController = require('../controllers/templateController');
+const articleController = require('../controllers/article/articleController');
+const audioController = require('../controllers/audio/audioController');
+const workflowController = require('../controllers/workflow/workflowController');
 
 // 视频生成相关路由
 router.post('/video/generate', videoController.generateVideo);
@@ -20,5 +23,20 @@ router.post('/models/configure', modelController.configureModel);
 router.get('/templates', templateController.listTemplates);
 router.post('/templates/create', templateController.createTemplate);
 router.get('/template/:id', templateController.getTemplate);
+
+// 文章处理相关路由
+router.post('/article/generate-images', articleController.generateImages);
+router.post('/article/generate-script', articleController.generateScript);
+router.post('/article/generate-storyboard', articleController.generateStoryboard);
+
+// 音频处理相关路由
+router.post('/audio/generate', audioController.generateAudio);
+router.post('/audio/edit', audioController.editAudio);
+
+// 工作流管理相关路由
+router.post('/workflow/create', workflowController.createWorkflow);
+router.post('/workflow/execute', workflowController.executeWorkflow);
+router.post('/workflow/reexecute-step', workflowController.reexecuteStep);
+router.get('/workflow/:workflowId/status', workflowController.getWorkflowStatus);
 
 module.exports = router;

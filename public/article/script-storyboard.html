@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文章生成脚本和分镜</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      height: 200px;
+      resize: vertical;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    .script-content {
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .scene-list {
+      margin-top: 10px;
+    }
+    .scene-item {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .scene-item h4 {
+      margin-top: 0;
+      color: #333;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .loading.show {
+      display: block;
+    }
+    .tab-container {
+      margin-bottom: 20px;
+    }
+    .tab {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      cursor: pointer;
+    }
+    .tab.active {
+      background-color: white;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+      border: 1px solid #ddd;
+      border-radius: 0 4px 4px 4px;
+      padding: 20px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>文章生成脚本和分镜</h1>
+    
+    <div class="tab-container">
+      <div class="tab active" onclick="switchTab('script')">生成脚本</div>
+      <div class="tab" onclick="switchTab('storyboard')">生成分镜</div>
+    </div>
+    
+    <div id="script" class="tab-content active">
+      <form id="scriptForm">
+        <div class="form-group">
+          <label for="scriptArticle">文章内容</label>
+          <textarea id="scriptArticle" placeholder="请输入文章内容，系统将根据文章生成视频脚本"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="scriptModel">AI模型</label>
+          <select id="scriptModel">
+            <option value="gpt-4">GPT-4</option>
+            <option value="aliyun">阿里云模型</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="scriptFormat">脚本格式</label>
+          <select id="scriptFormat">
+            <option value="video">视频脚本</option>
+            <option value="short-video">短视频脚本</option>
+            <option value="documentary">纪录片脚本</option>
+          </select>
+        </div>
+        
+        <button type="submit">生成脚本</button>
+        <button type="button" onclick="window.location.href='/index.html'">返回首页</button>
+      </form>
+    </div>
+    
+    <div id="storyboard" class="tab-content">
+      <form id="storyboardForm">
+        <div class="form-group">
+          <label for="storyboardArticle">文章内容</label>
+          <textarea id="storyboardArticle" placeholder="请输入文章内容，系统将根据文章生成分镜"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="storyboardModel">AI模型</label>
+          <select id="storyboardModel">
+            <option value="gpt-4">GPT-4</option>
+            <option value="aliyun">阿里云模型</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="sceneCount">分镜数量</label>
+          <select id="sceneCount">
+            <option value="3">3个场景</option>
+            <option value="5" selected>5个场景</option>
+            <option value="7">7个场景</option>
+            <option value="10">10个场景</option>
+          </select>
+        </div>
+        
+        <button type="submit">生成分镜</button>
+        <button type="button" onclick="window.location.href='/index.html'">返回首页</button>
+      </form>
+    </div>
+    
+    <div class="loading" id="loading">
+      <p>正在生成，请稍候...</p>
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+      <h3>生成结果</h3>
+      <div id="resultContent"></div>
+    </div>
+    
+    <div id="error" class="error" style="display: none;"></div>
+  </div>
+  
+  <script>
+    function switchTab(tabName) {
+      // 切换标签
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => tab.classList.remove('active'));
+      tabContents.forEach(content => content.classList.remove('active'));
+      
+      document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+    }
+    
+    // 脚本生成表单
+    document.getElementById('scriptForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const article = document.getElementById('scriptArticle').value;
+      const model = document.getElementById('scriptModel').value;
+      const format = document.getElementById('scriptFormat').value;
+      
+      // 显示加载状态
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('loading').classList.add('show');
+      
+      try {
+        const response = await fetch('/api/article/generate-script', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            article,
+            model,
+            format
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('生成脚本失败');
+        }
+        
+        const data = await response.json();
+        
+        // 显示结果
+        document.getElementById('resultContent').innerHTML = `
+          <h4>生成的脚本</h4>
+          <div class="script-content">${data.script}</div>
+          <button onclick="regenerateScript('${data.scriptId}')">重新生成</button>
+          <button onclick="selectScript('${data.scriptId}')">选择</button>
+        `;
+        
+        document.getElementById('result').style.display = 'block';
+      } catch (error) {
+        document.getElementById('error').textContent = error.message;
+        document.getElementById('error').style.display = 'block';
+      } finally {
+        document.getElementById('loading').classList.remove('show');
+      }
+    });
+    
+    // 分镜生成表单
+    document.getElementById('storyboardForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const article = document.getElementById('storyboardArticle').value;
+      const model = document.getElementById('storyboardModel').value;
+      const scenes = document.getElementById('sceneCount').value;
+      
+      // 显示加载状态
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('loading').classList.add('show');
+      
+      try {
+        const response = await fetch('/api/article/generate-storyboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            article,
+            model,
+            scenes: parseInt(scenes)
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('生成分镜失败');
+        }
+        
+        const data = await response.json();
+        
+        // 显示结果
+        const sceneList = document.createElement('div');
+        sceneList.className = 'scene-list';
+        
+        data.scenes.forEach(scene => {
+          const sceneItem = document.createElement('div');
+          sceneItem.className = 'scene-item';
+          sceneItem.innerHTML = `
+            <h4>场景 ${scene.sceneNumber}</h4>
+            <p>${scene.content}</p>
+            <button onclick="regenerateScene('${scene.sceneId}')">重新生成</button>
+            <button onclick="selectScene('${scene.sceneId}')">选择</button>
+          `;
+          sceneList.appendChild(sceneItem);
+        });
+        
+        document.getElementById('resultContent').innerHTML = `
+          <h4>生成的分镜</h4>
+          ${sceneList.outerHTML}
+          <button onclick="regenerateStoryboard('${data.storyboardId}')">重新生成分镜</button>
+          <button onclick="selectStoryboard('${data.storyboardId}')">选择</button>
+        `;
+        
+        document.getElementById('result').style.display = 'block';
+      } catch (error) {
+        document.getElementById('error').textContent = error.message;
+        document.getElementById('error').style.display = 'block';
+      } finally {
+        document.getElementById('loading').classList.remove('show');
+      }
+    });
+    
+    function regenerateScript(scriptId) {
+      alert(`重新生成脚本: ${scriptId}`);
+    }
+    
+    function selectScript(scriptId) {
+      alert(`选择脚本: ${scriptId}`);
+    }
+    
+    function regenerateScene(sceneId) {
+      alert(`重新生成场景: ${sceneId}`);
+    }
+    
+    function selectScene(sceneId) {
+      alert(`选择场景: ${sceneId}`);
+    }
+    
+    function regenerateStoryboard(storyboardId) {
+      alert(`重新生成分镜: ${storyboardId}`);
+    }
+    
+    function selectStoryboard(storyboardId) {
+      alert(`选择分镜: ${storyboardId}`);
+    }
+  </script>
+</body>
+</html>
