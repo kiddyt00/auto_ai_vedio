@@ -1,9 +1,21 @@
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
+// 加载配置
+require('./src/config');
+
+// 中间件
+app.use(express.json());
+app.use(express.static('public'));
+
+// 路由
+const routes = require('./src/routes');
+app.use('/api', routes);
+
+// 健康检查
 app.get('/', (req, res) => {
-  res.send('Hello AI Video Generator!');
+  res.send('AI Video Generator API is running!');
 });
 
 app.listen(port, () => {
