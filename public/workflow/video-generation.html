@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>视频生成</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      height: 150px;
+      resize: vertical;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    .video-player {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .video-player video {
+      max-width: 100%;
+      border-radius: 4px;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .loading.show {
+      display: block;
+    }
+    .step-list {
+      margin-top: 20px;
+    }
+    .step-item {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .step-item h4 {
+      margin-top: 0;
+      color: #333;
+    }
+    .step-item.completed {
+      border-left: 4px solid #4CAF50;
+    }
+    .step-item.pending {
+      border-left: 4px solid #ff9800;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>视频生成</h1>
+    
+    <form id="videoForm">
+      <div class="form-group">
+        <label for="article">文章内容</label>
+        <textarea id="article" placeholder="请输入文章内容，系统将自动生成视频"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="imageModel">图像模型</label>
+        <select id="imageModel">
+          <option value="stable-diffusion">Stable Diffusion</option>
+          <option value="aliyun">阿里云模型</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="scriptModel">脚本模型</label>
+        <select id="scriptModel">
+          <option value="gpt-4">GPT-4</option>
+          <option value="aliyun">阿里云模型</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="audioModel">音频模型</label>
+        <select id="audioModel">
+          <option value="elevenlabs">ElevenLabs</option>
+          <option value="aliyun">阿里云模型</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="videoModel">视频模型</label>
+        <select id="videoModel">
+          <option value="sora">Sora</option>
+          <option value="aliyun">阿里云模型</option>
+        </select>
+      </div>
+      
+      <button type="submit">生成视频</button>
+      <button type="button" onclick="window.location.href='/index.html'">返回首页</button>
+    </form>
+    
+    <div class="loading" id="loading">
+      <p>正在生成视频，请稍候...</p>
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+      <h3>生成结果</h3>
+      <div id="workflowSteps" class="step-list"></div>
+      <div id="videoPlayer" class="video-player"></div>
+    </div>
+    
+    <div id="error" class="error" style="display: none;"></div>
+  </div>
+  
+  <script>
+    document.getElementById('videoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const article = document.getElementById('article').value;
+      const imageModel = document.getElementById('imageModel').value;
+      const scriptModel = document.getElementById('scriptModel').value;
+      const audioModel = document.getElementById('audioModel').value;
+      const videoModel = document.getElementById('videoModel').value;
+      
+      // 显示加载状态
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('loading').classList.add('show');
+      
+      try {
+        // 首先创建工作流
+        const createResponse = await fetch('/api/workflow/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ article })
+        });
+        
+        if (!createResponse.ok) {
+          throw new Error('创建工作流失败');
+        }
+        
+        const createData = await createResponse.json();
+        const workflowId = createData.workflowId;
+        
+        // 执行工作流
+        const executeResponse = await fetch('/api/workflow/execute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            workflowId,
+            article,
+            imageModel,
+            scriptModel,
+            audioModel,
+            videoModel
+          })
+        });
+        
+        if (!executeResponse.ok) {
+          throw new Error('执行工作流失败');
+        }
+        
+        const executeData = await executeResponse.json();
+        
+        // 显示结果
+        const workflowSteps = document.getElementById('workflowSteps');
+        workflowSteps.innerHTML = '';
+        
+        executeData.steps.forEach(step => {
+          const stepItem = document.createElement('div');
+          stepItem.className = `step-item ${step.status}`;
+          stepItem.innerHTML = `
+            <h4>步骤 ${step.stepNumber}: ${step.name}</h4>
+            <p>状态: ${step.status}</p>
+            <button onclick="reexecuteStep('${workflowId}', ${step.stepNumber})">重新执行</button>
+          `;
+          workflowSteps.appendChild(stepItem);
+        });
+        
+        // 显示视频播放器
+        const lastStep = executeData.steps[executeData.steps.length - 1];
+        if (lastStep && lastStep.result && lastStep.result.videoUrl) {
+          document.getElementById('videoPlayer').innerHTML = `
+            <h4>生成的视频</h4>
+            <video controls>
+              <source src="${lastStep.result.videoUrl}" type="video/mp4">
+              您的浏览器不支持视频播放。
+             </video>
+            <button onclick="regenerateVideo('${workflowId}')">重新生成视频</button>
+            <button onclick="downloadVideo('${lastStep.result.videoUrl}')">下载视频</button>
+          `;
+        }
+        
+        document.getElementById('result').style.display = 'block';
+      } catch (error) {
+        document.getElementById('error').textContent = error.message;
+        document.getElementById('error').style.display = 'block';
+      } finally {
+        document.getElementById('loading').classList.remove('show');
+      }
+    });
+    
+    function reexecuteStep(workflowId, stepNumber) {
+      alert(`重新执行步骤 ${stepNumber}`);
+    }
+    
+    function regenerateVideo(workflowId) {
+      alert(`重新生成视频`);
+    }
+    
+    function downloadVideo(videoUrl) {
+      const link = document.createElement('a');
+      link.href = videoUrl;
+      link.download = `video_${Date.now()}.mp4`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
