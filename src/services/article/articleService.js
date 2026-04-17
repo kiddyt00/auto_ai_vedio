@@ -4,7 +4,7 @@ const aiService = require('../aiService');
 const articleService = {
   // 文章生图
   generateImagesFromArticle: async (article, options = {}) => {
-    const { model = 'stable-diffusion', count = 3, style = 'realistic' } = options;
+    const { model = 'stable-diffusion', count = 3, style = 'realistic', characterPrompt } = options;
     
     console.log('Generating images from article...');
     
@@ -14,7 +14,10 @@ const articleService = {
     // 为每个关键句子生成图片
     const images = [];
     for (const sentence of keySentences) {
-      const prompt = `Based on this content: ${sentence}. Style: ${style}`;
+      let prompt = `Based on this content: ${sentence}. Style: ${style}`;
+      if (characterPrompt) {
+        prompt += `\n\nCharacter: ${characterPrompt}`;
+      }
       const imageResult = await aiService.generateImage(prompt, model);
       
       images.push({
@@ -24,6 +27,7 @@ const articleService = {
         sentence,
         model,
         style,
+        characterPrompt,
         createdAt: new Date().toISOString()
       });
     }
@@ -33,17 +37,21 @@ const articleService = {
       article,
       images,
       total: images.length,
+      characterPrompt,
       createdAt: new Date().toISOString()
     };
   },
   
   // 文章生成脚本
   generateScriptFromArticle: async (article, options = {}) => {
-    const { model = 'gpt-4', format = 'video' } = options;
+    const { model = 'gpt-4', format = 'video', characterPrompt } = options;
     
     console.log('Generating script from article...');
     
-    const prompt = `Convert the following article into a ${format} script. Include scene descriptions, dialogue (if appropriate), and visual cues.\n\nArticle:\n${article}`;
+    let prompt = `Convert the following article into a ${format} script. Include scene descriptions, dialogue (if appropriate), and visual cues.\n\nArticle:\n${article}`;
+    if (characterPrompt) {
+      prompt += `\n\nCharacter: ${characterPrompt}`;
+    }
     
     const textResult = await aiService.generateText(prompt, model);
     
@@ -53,17 +61,21 @@ const articleService = {
       script: textResult.generatedText,
       model,
       format,
+      characterPrompt,
       createdAt: new Date().toISOString()
     };
   },
   
   // 文章生成分镜
   generateStoryboardFromArticle: async (article, options = {}) => {
-    const { model = 'gpt-4', scenes = 5 } = options;
+    const { model = 'gpt-4', scenes = 5, characterPrompt } = options;
     
     console.log('Generating storyboard from article...');
     
-    const prompt = `Create a storyboard for a video based on the following article. Include ${scenes} scenes with detailed descriptions of each scene, camera angles, and visual elements.\n\nArticle:\n${article}`;
+    let prompt = `Create a storyboard for a video based on the following article. Include ${scenes} scenes with detailed descriptions of each scene, camera angles, and visual elements.\n\nArticle:\n${article}`;
+    if (characterPrompt) {
+      prompt += `\n\nCharacter: ${characterPrompt}`;
+    }
     
     const textResult = await aiService.generateText(prompt, model);
     
@@ -81,6 +93,7 @@ const articleService = {
       scenes: storyboardScenes,
       totalScenes: storyboardScenes.length,
       model,
+      characterPrompt,
       createdAt: new Date().toISOString()
     };
   }

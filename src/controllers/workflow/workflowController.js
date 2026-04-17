@@ -21,7 +21,7 @@ const workflowController = {
   // 执行工作流
   executeWorkflow: async (req, res) => {
     try {
-      const { workflowId, article, imageModel, scriptModel, audioModel, videoModel } = req.body;
+      const { workflowId, article, imageModel, scriptModel, audioModel, videoModel, characterData } = req.body;
       
       if (!workflowId || !article) {
         return res.status(400).json({ error: 'Workflow ID and article are required' });
@@ -32,7 +32,8 @@ const workflowController = {
         imageModel: imageModel || 'stable-diffusion',
         scriptModel: scriptModel || 'gpt-4',
         audioModel: audioModel || 'elevenlabs',
-        videoModel: videoModel || 'sora'
+        videoModel: videoModel || 'sora',
+        characterData
       });
       
       res.status(200).json(result);
