@@ -39,4 +39,11 @@ router.post('/workflow/execute', workflowController.executeWorkflow);
 router.post('/workflow/reexecute-step', workflowController.reexecuteStep);
 router.get('/workflow/:workflowId/status', workflowController.getWorkflowStatus);
 
+// 中间制品管理相关路由
+router.post('/artifact/select', workflowController.selectArtifact);
+router.post('/artifact/regenerate', workflowController.regenerateArtifact);
+router.get('/artifact/:artifactId', workflowController.getArtifact);
+router.get('/artifacts/step/:stepName', workflowController.getArtifactsByStep);
+router.get('/artifacts/workflow/:workflowId', workflowController.getArtifactsByWorkflow);
+
 module.exports = router;
