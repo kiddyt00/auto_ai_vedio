@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI视频生成工具</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      height: 100px;
+      resize: vertical;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    .video-item {
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AI视频生成工具</h1>
+    
+    <form id="videoForm">
+      <div class="form-group">
+        <label for="prompt">视频描述</label>
+        <textarea id="prompt" placeholder="请输入视频内容描述，例如：一只猫在玩球"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="model">AI模型</label>
+        <select id="model">
+          <option value="sora">Sora (视频生成)</option>
+          <option value="stable-diffusion">Stable Diffusion (图像生成)</option>
+          <option value="gpt-4">GPT-4 (文本生成)</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="duration">视频时长 (秒)</label>
+        <input type="text" id="duration" value="30">
+      </div>
+      
+      <div class="form-group">
+        <label for="resolution">分辨率</label>
+        <select id="resolution">
+          <option value="1920x1080">1920x1080 (Full HD)</option>
+          <option value="1080x720">1080x720 (HD)</option>
+          <option value="720x480">720x480 (SD)</option>
+        </select>
+      </div>
+      
+      <button type="submit">生成视频</button>
+    </form>
+    
+    <div id="result" class="result" style="display: none;">
+      <h3>生成结果</h3>
+      <div id="videoInfo"></div>
+    </div>
+    
+    <div id="error" class="error" style="display: none;"></div>
+  </div>
+  
+  <script>
+    document.getElementById('videoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const prompt = document.getElementById('prompt').value;
+      const model = document.getElementById('model').value;
+      const duration = document.getElementById('duration').value;
+      const resolution = document.getElementById('resolution').value;
+      
+      // 显示加载状态
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      
+      try {
+        const response = await fetch('/api/video/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt,
+            model,
+            duration: parseInt(duration),
+            resolution
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('生成视频失败');
+        }
+        
+        const data = await response.json();
+        
+        // 显示结果
+        document.getElementById('videoInfo').innerHTML = `
+          <div class="video-item">
+            <strong>视频ID:</strong> ${data.id}<br>
+            <strong>描述:</strong> ${data.prompt}<br>
+            <strong>模型:</strong> ${data.model}<br>
+            <strong>时长:</strong> ${data.duration}秒<br>
+            <strong>分辨率:</strong> ${data.resolution}<br>
+            <strong>状态:</strong> ${data.status}<br>
+            <strong>创建时间:</strong> ${new Date(data.createdAt).toLocaleString()}
+          </div>
+        `;
+        
+        document.getElementById('result').style.display = 'block';
+      } catch (error) {
+        document.getElementById('error').textContent = error.message;
+        document.getElementById('error').style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

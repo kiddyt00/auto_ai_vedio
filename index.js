@@ -1,9 +1,10 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;
 
 // 加载配置
 require('./src/config');
+
+const port = process.env.PORT || 3000;
 
 // 中间件
 app.use(express.json());
